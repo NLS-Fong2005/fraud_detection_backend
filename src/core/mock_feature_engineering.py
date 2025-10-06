@@ -17,7 +17,7 @@ class FeatureInsertion:
             dataframe: pd.DataFrame, 
             column_name: str
     ) -> pd.DataFrame:
-        null_rows_indices = dataframe[self.geographical_data_column].isnull()
+        null_rows_indices = dataframe[column_name].isnull()
         null_rows: pd.DataFrame = dataframe[null_rows_indices]
 
         return null_rows
@@ -71,10 +71,15 @@ class FeatureInsertion:
         
         def generate_random_geographical_data(category: str) -> str:
             random_index: int = random.randint(0, 4)
+
+            safe_geography: tuple = safe_geographies[random_index]
+            unexpected_geography: tuple = unexpected_geographies[random_index]
+
             if category.lower() == "spam":
-                generated_data: tuple = unexpected_geographies[random_index]
+                generated_data: tuple = unexpected_geography
             else:
-                generated_data: tuple = safe_geographies[random_index] if random.randint(0, 10) > 0 else unexpected_geographies[random_index]
+                generated_data: tuple = safe_geography if random.randint(0, 10) > 0 else unexpected_geography
+
             return str(generated_data)
 
         if self.geographical_data_column not in dataframe:
@@ -90,6 +95,55 @@ class FeatureInsertion:
         return dataframe
 
     def insert_network_data(self, dataframe: pd.DataFrame) -> pd.DataFrame:
+        regular_ip_ranges: List[str] = [
+            "192.168.x.y",    # internal private LAN range
+            "10.0.x.y",         # private subnet
+            "172.16. x.y",        # private class B
+            "203.0.113.y",  # telco NAT/test-net
+            "124.13.x.y",     # Malaysia ISP allocation
+        ]
+
+        irregular_ip_ranges: List[str] = [
+            "185.220.100.y",    # Tor exit node range
+            "45.67.x.y",        # suspicious hosting provider block
+            "198.51.100.y",     # reserved test-net (used here as "foreign DC" mock)
+            "5.188.x.y",        # Eastern European DC range
+            "37.120.x.y",       # VPN/hosting common net
+        ]
+
+        def generate_random_network_ip(category: str) -> str:
+            random_index: int = random.randint(0, 4)
+            third_octet: int = random.randint(0, 255)
+            fourth_octet: int = random.randint(0, 255)
+            
+            translation_dict: dict = {
+                "x" : str(third_octet),
+                "y" : str(fourth_octet)
+            }
+
+            translation_table = str.maketrans(translation_dict)
+
+            regular_ip: str = regular_ip_ranges[random_index]
+            irregular_ip: str = irregular_ip_ranges[random_index]
+
+            if (category.lower() == "spam"):
+                generated_ip: str = irregular_ip
+            else:
+                generated_ip: str = regular_ip if random.randint(0, 10) > 0 else irregular_ip
+
+            return generated_ip.translate(translation_table)
+        
+        if self.network_data_column not in dataframe:
+            dataframe[self.network_data_column] = None
+
+        if (dataframe[self.network_data_column].isnull().sum() > 0):
+            null_rows: pd.DataFrame = self.__retrieve_null_rows(dataframe=dataframe, column_name=self.network_data_column)
+
+            for index, row in null_rows.iterrows():
+                generated_network_data: str = generate_random_network_ip(category=row.Category)
+                dataframe.loc[index, self.network_data_column] = generated_network_data #type: ignore
+
+        print(dataframe)
         return dataframe
     
     def insert_temporal_data(self, dataframe: pd.DataFrame) -> pd.DataFrame:

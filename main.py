@@ -15,8 +15,8 @@ def main():
         dataframe = dataframe.drop(columns=["Unnamed: 0"], axis=1)
 
     # dataframe = feature_insertion.insert_temporal_data(dataframe=dataframe)
-    # dataframe = feature_insertion.insert_network_data(dataframe=dataframe)
-    dataframe = feature_insertion.insert_geographical_data(dataframe=dataframe)
+    dataframe = feature_insertion.insert_network_data(dataframe=dataframe)
+    # dataframe = feature_insertion.insert_geographical_data(dataframe=dataframe)
     # dataframe = feature_insertion.increasing_spam_frequency(dataframe=dataframe)
 
     # feature_insertion.export_to_path(dataframe=dataframe)
