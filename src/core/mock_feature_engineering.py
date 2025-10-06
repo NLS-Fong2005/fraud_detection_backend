@@ -2,6 +2,12 @@ import os
 import pandas as pd
 import random
 
+from datetime import (
+    date,
+    datetime, 
+    timedelta, 
+    time
+)
 from typing import List
 
 class FeatureInsertion:
@@ -98,7 +104,7 @@ class FeatureInsertion:
         regular_ip_ranges: List[str] = [
             "192.168.x.y",    # internal private LAN range
             "10.0.x.y",         # private subnet
-            "172.16. x.y",        # private class B
+            "172.16.x.y",        # private class B
             "203.0.113.y",  # telco NAT/test-net
             "124.13.x.y",     # Malaysia ISP allocation
         ]
@@ -143,10 +149,45 @@ class FeatureInsertion:
                 generated_network_data: str = generate_random_network_ip(category=row.Category)
                 dataframe.loc[index, self.network_data_column] = generated_network_data #type: ignore
 
-        print(dataframe)
         return dataframe
     
     def insert_temporal_data(self, dataframe: pd.DataFrame) -> pd.DataFrame:
+        start_datetime: datetime = datetime(2025, 7, 1, 9, 0, 0)
+        end_datetime: datetime = datetime(2025, 9, 30, 18, 0, 0)
+
+        def generate_random_date() -> date:
+            days_span = (end_datetime.date() - start_datetime.date()).days
+            offset_days = random.randint(0, days_span)
+            return (start_datetime + timedelta(days=offset_days)).date()
+
+        def generate_random_time(category: str) -> time:
+            if category.lower() == "spam":
+                hour: int = random.randint(9, 18)
+            else:
+                hour: int = random.randint(0, 5)
+            minute: int = random.randint(0, 59)
+            second: int = random.randint(0, 59)
+            return time(hour, minute, second)
+        
+        if self.date_column not in dataframe:
+            dataframe[self.date_column] = None
+
+        if self.time_column not in dataframe:
+            dataframe[self.time_column] = None
+
+        if (dataframe[self.date_column].isnull().sum() > 0):
+            null_rows: pd.DataFrame = self.__retrieve_null_rows(dataframe=dataframe, column_name=self.date_column)
+
+            for index, _ in null_rows.iterrows():
+                generated_date: date = generate_random_date()
+                dataframe.loc[index, self.date_column] = generated_date #type: ignore
+
+        if (dataframe[self.time_column].isnull().sum() > 0):
+            null_rows: pd.DataFrame = self.__retrieve_null_rows(dataframe=dataframe, column_name=self.time_column)
+
+            for index, row in null_rows.iterrows():
+                generated_time = generate_random_time(category=row.Category)
+                dataframe.loc[index, self.time_column] = generated_time #type: ignore
         return dataframe
     
 feature_insertion = FeatureInsertion()
