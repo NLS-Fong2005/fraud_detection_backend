@@ -1,16 +1,12 @@
-#IMPORTS GO HERE
+# <-- Imports -->
 from src.core.mock_feature_engineering import feature_insertion
 
 import pandas as pd
 import os
 
-#GLOBAL VARIABLES GO HERE
+# <-- Functions -->
 
-#FUNCTIONS GO HERE
-def main():
-    dataset_path = os.path.abspath("./data/raw/spam.csv")
-    dataframe: pd.DataFrame = pd.read_csv(dataset_path)
-
+def generate_mock_dataset(dataframe: pd.DataFrame) -> None:
     if "Unnamed: 0" in dataframe:
         dataframe = dataframe.drop(columns=["Unnamed: 0"], axis=1)
 
@@ -22,6 +18,13 @@ def main():
     print(f"Final Dataframe:\n{dataframe}")
 
     feature_insertion.export_to_path(dataframe=dataframe)
+
+def main():
+    """Main Function"""
+    dataset_path = os.path.abspath("./data/raw/spam.csv")
+    dataframe: pd.DataFrame = pd.read_csv(dataset_path)
+
+    generate_mock_dataset(dataframe=dataframe)
 
 if __name__ == '__main__':
     main()
