@@ -4,3 +4,5 @@ pandas
 seaborn
 ipykernel
 torch
+torchvision
+transformers
