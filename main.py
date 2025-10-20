@@ -24,7 +24,7 @@ def main():
     dataset_path = os.path.abspath("./data/raw/spam.csv")
     dataframe: pd.DataFrame = pd.read_csv(dataset_path)
 
-    generate_mock_dataset(dataframe=dataframe)
+    generate_mock_dataset(dataframe=dataframe)\
 
 if __name__ == '__main__':
     main()
