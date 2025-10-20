@@ -162,9 +162,9 @@ class FeatureInsertion:
 
         def generate_random_time(category: str) -> time:
             if category.lower() == "spam":
-                hour: int = random.randint(9, 18)
-            else:
                 hour: int = random.randint(0, 5)
+            else:
+                hour: int = random.randint(9, 18)
             minute: int = random.randint(0, 59)
             second: int = random.randint(0, 59)
             return time(hour, minute, second)
