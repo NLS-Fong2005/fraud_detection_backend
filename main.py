@@ -1,6 +1,7 @@
 # <-- Imports -->
-from src.core.mock_feature_engineering import feature_insertion
+from src.core.mock_feature_generation import feature_insertion
 from src.machine_learning.roBERTa_method.roBERTa_data_training import roberta_model
+from src.machine_learning.feature_engineering import feature_engineering
 
 import pandas as pd
 import os
@@ -22,11 +23,12 @@ def generate_mock_dataset(dataframe: pd.DataFrame) -> None:
 
 def main():
     """Main Function"""
-    dataset_path = os.path.abspath("./data/raw/spam.csv")
+    dataset_path = os.path.abspath("./data/mock/mock_dataset.csv")
     dataframe: pd.DataFrame = pd.read_csv(dataset_path)
 
     # generate_mock_dataset(dataframe=dataframe)
-    roberta_model.data_loading()
+    # roberta_model.data_loading()
+    feature_engineering.feature_engineer_dataset(dataframe)
 
 if __name__ == '__main__':
     main()

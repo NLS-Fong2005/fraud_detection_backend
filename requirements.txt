@@ -1,8 +1,9 @@
+ipykernel
 matplotlib
 numpy
 pandas
+scikit-learn
 seaborn
-ipykernel
 torch
 torchvision
 transformers
