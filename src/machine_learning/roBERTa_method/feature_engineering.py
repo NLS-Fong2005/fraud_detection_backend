@@ -2,12 +2,30 @@ import os
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 
+# <--- Configuration --->
+
 class FeatureEngineering:
     def __init__(self):
         self.LABEL_COLUMN: str = "Category"
         self.TEMPORAL_COLUMN: str = "Sent_Time"
         self.NETWORK_DATA: str = "Source_IP"
         self.GEOGRAPHICAL_DATA: str = "Source_Location"
+
+    def __export_to_path__(self, dataframe: pd.DataFrame):
+        PROCESSED_DIRECTORY: str = os.path.abspath("./data/processed")
+        PROCESSED_DATASET_PATH: str = os.path.abspath(f"{PROCESSED_DIRECTORY}/processed_dataset.csv")
+
+        try:
+            dataframe.to_csv(path_or_buf=PROCESSED_DATASET_PATH, index=False)
+            print(f"Successfully saved to {PROCESSED_DATASET_PATH}")
+        except FileExistsError:
+            os.remove(PROCESSED_DATASET_PATH)
+            dataframe.to_csv(path_or_buf=PROCESSED_DATASET_PATH, index=False)
+            print(f"Successfully saved to {PROCESSED_DATASET_PATH}")
+        except FileNotFoundError:
+            print(f"{PROCESSED_DIRECTORY} does not exist! Please ensure processed directory is made under {os.path.abspath("./data/")}")
+        except Exception as e:
+            print(f"Something went wrong: {e}")
 
     def feature_engineer_dataset(self, dataframe: pd.DataFrame):
         try:
@@ -62,6 +80,9 @@ class FeatureEngineering:
 
             print("\n--- Dataframe Info ---\n")
             dataframe.info()
+
+            print("\n--- Exporting Dataset ---\n")
+            self.__export_to_path__(dataframe=dataframe)
         except KeyError as e:
             print(f"Column not Found: {e}")
 

@@ -18,7 +18,7 @@ class FeatureInsertion:
         self.date_column: str = "Sent_Date"
         self.time_column: str = "Sent_Time"
 
-    def __retrieve_null_rows(
+    def __retrieve_null_rows__(
             self, 
             dataframe: pd.DataFrame, 
             column_name: str
@@ -92,7 +92,7 @@ class FeatureInsertion:
             dataframe[self.geographical_data_column] = None
         
         if (dataframe[self.geographical_data_column].isnull().sum() > 0):
-            null_rows: pd.DataFrame = self.__retrieve_null_rows(dataframe=dataframe, column_name=self.geographical_data_column)
+            null_rows: pd.DataFrame = self.__retrieve_null_rows__(dataframe=dataframe, column_name=self.geographical_data_column)
 
             for index, row in null_rows.iterrows():
                 generated_geographical_data: str = generate_random_geographical_data(category=row.Category)
@@ -143,7 +143,7 @@ class FeatureInsertion:
             dataframe[self.network_data_column] = None
 
         if (dataframe[self.network_data_column].isnull().sum() > 0):
-            null_rows: pd.DataFrame = self.__retrieve_null_rows(dataframe=dataframe, column_name=self.network_data_column)
+            null_rows: pd.DataFrame = self.__retrieve_null_rows__(dataframe=dataframe, column_name=self.network_data_column)
 
             for index, row in null_rows.iterrows():
                 generated_network_data: str = generate_random_network_ip(category=row.Category)
@@ -176,14 +176,14 @@ class FeatureInsertion:
             dataframe[self.time_column] = None
 
         if (dataframe[self.date_column].isnull().sum() > 0):
-            null_rows: pd.DataFrame = self.__retrieve_null_rows(dataframe=dataframe, column_name=self.date_column)
+            null_rows: pd.DataFrame = self.__retrieve_null_rows__(dataframe=dataframe, column_name=self.date_column)
 
             for index, _ in null_rows.iterrows():
                 generated_date: date = generate_random_date()
                 dataframe.loc[index, self.date_column] = generated_date #type: ignore
 
         if (dataframe[self.time_column].isnull().sum() > 0):
-            null_rows: pd.DataFrame = self.__retrieve_null_rows(dataframe=dataframe, column_name=self.time_column)
+            null_rows: pd.DataFrame = self.__retrieve_null_rows__(dataframe=dataframe, column_name=self.time_column)
 
             for index, row in null_rows.iterrows():
                 generated_time = generate_random_time(category=row.Category)
