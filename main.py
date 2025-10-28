@@ -3,6 +3,7 @@ from src.core.mock_feature_generation import feature_insertion
 from src.machine_learning.roBERTa_method.torch_dataset import torch_dataset
 from src.machine_learning.roBERTa_method.feature_engineering import feature_engineering
 from src.machine_learning.roBERTa_method.roBERTa_data_training import roberta_model
+from src.machine_learning.roBERTa_method.roberta_spam_classifier import run_model_testing
 import pandas as pd
 import os
 
@@ -29,7 +30,9 @@ def main():
     # generate_mock_dataset(dataframe=dataframe)
     # roberta_model.data_loading()
     # feature_engineering.feature_engineer_dataset(dataframe)
-    torch_dataset.data_loading()
+    # torch_dataset.data_loading()
+    run_model_testing()
+    
 
 if __name__ == '__main__':
     main()

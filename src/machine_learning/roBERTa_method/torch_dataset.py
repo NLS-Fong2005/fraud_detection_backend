@@ -66,7 +66,7 @@ class TorchDataset(Dataset):
         return {
             "input_ids": input_ids,
             "attention_mask": attention_mask,
-            "tabular_features": torch.tensor(tabular_features, dtype=torch.float64),
+            "tabular_features": torch.tensor(tabular_features, dtype=torch.float),
             "label": torch.tensor(label, dtype=torch.long)
         }
 
