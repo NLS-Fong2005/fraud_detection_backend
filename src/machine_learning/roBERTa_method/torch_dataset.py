@@ -16,13 +16,12 @@ LABEL_COLUMN: str = "Category"
 class TorchDataset(Dataset):
     def __init__(
             self,
-            csv_file_path: str,
+            dataframe: pd.DataFrame,
             tokeniser_name="roberta-base",
             max_length=128
     ):
         print("Loading Data...")
-        self.dataframe = pd.read_csv(PROCESSED_DATASET_PATH)
-
+        self.dataframe = dataframe
         self.tokeniser = RobertaTokenizer.from_pretrained(tokeniser_name)
         self.max_length = max_length
 
