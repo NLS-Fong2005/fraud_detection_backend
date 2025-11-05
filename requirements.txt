@@ -1,4 +1,8 @@
+chromadb
 ipykernel
+langchain
+langchain-community
+langchain-openai
 matplotlib
 numpy
 pandas
