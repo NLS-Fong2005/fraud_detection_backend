@@ -1,8 +1,9 @@
-chromadb
 ipykernel
 langchain
-langchain-community
+langchain_community
+langchain-core
 langchain-openai
+langchain-weaviate
 matplotlib
 numpy
 pandas
@@ -12,3 +13,4 @@ seaborn
 torch
 torchvision
 transformers
+weaviate-client

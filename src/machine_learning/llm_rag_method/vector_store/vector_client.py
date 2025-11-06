@@ -1,32 +1,43 @@
-import chromadb
+import weaviate
+from typing import Optional
 
 # <--- Configurations --->
 class VectorClient:
     def __init__(self):
-        self.vector_client = None
+        self.vector_client: Optional[weaviate.client.WeaviateClient] = None
         
         if not (self.vector_client):
             self.__set_vector_connection__()
-            print(f"Connection is established.\nHeartbeat: {self.vector_client.heartbeat()}") #type: ignore
         else:
-            print(f"Connection already established! {self.vector_client.heartbeat()}")
+            print("Already connected to Weaviate.")
 
-    def __set_vector_connection__(self):
+    def __set_vector_connection__(self) -> None:
         try:
-            self.vector_client = chromadb.HttpClient(host="localhost", port=8000)
-
-            if (self.vector_client.heartbeat()):
-                print("Connection Established.")
+            if self.vector_client and self.vector_client.is_connected():
+                print("Vector client is already connected.") 
+                return None
             else:
-                print("Connection is not established")            
+                self.vector_client = weaviate.connect_to_local() #type: ignore
+                print("Successfully connected to Weaviate.")
         except Exception as e:
             print(f"Something went wrong: {e}")
+            exit()
 
-    def get_vector_connection(self):
-        return self.vector_client
+    def get_vector_connection(self) -> weaviate.client.WeaviateClient:
+        if not self.vector_client:
+            self.__set_vector_connection__()
+        return self.vector_client #type: ignore
+    
+    def close_vector_connection(self) -> None:
+        if (self.vector_client and self.vector_client.is_connected()):
+            self.vector_client.close()
+            return None
+        print("Vector Client is already closed!")
+        return None
 
 vector_client = VectorClient()
 
 # Exclusive to Testing
 if __name__ == "__main__":
-    print(vector_client.get_vector_connection().heartbeat()) #type: ignore
+    print(vector_client.get_vector_connection().is_connected())
+    vector_client.close_vector_connection()
