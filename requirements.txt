@@ -6,6 +6,7 @@ langchain-openai
 matplotlib
 numpy
 pandas
+python-dotenv
 scikit-learn
 seaborn
 torch
