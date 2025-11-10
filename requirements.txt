@@ -8,6 +8,7 @@ matplotlib
 numpy
 pandas
 python-dotenv
+python-docx
 scikit-learn
 seaborn
 torch

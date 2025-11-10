@@ -14,7 +14,7 @@ class VectorClient:
     def __set_vector_connection__(self) -> None:
         try:
             if self.vector_client and self.vector_client.is_connected():
-                print("Vector client is already connected.") 
+                print("Vector client is already connected.")
                 return None
             else:
                 self.vector_client = weaviate.connect_to_local() #type: ignore
@@ -26,7 +26,7 @@ class VectorClient:
     def get_vector_connection(self) -> weaviate.client.WeaviateClient:
         if not self.vector_client:
             self.__set_vector_connection__()
-        return self.vector_client #type: ignore
+        return self.vector_client #type: ignore 
     
     def close_vector_connection(self) -> None:
         if (self.vector_client and self.vector_client.is_connected()):
