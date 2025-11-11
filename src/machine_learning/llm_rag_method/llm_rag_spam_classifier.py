@@ -30,10 +30,11 @@ class LlmRagSpamClassifier:
             Human: {input}
             """
         )
+        message_guideline: str = "message_guideline"
 
         message_agent_chain = message_agent_prompt | self.LLM
 
-        guidelines = vector_collection.fetch_object_from_header("message_guideline")
+        guidelines = vector_collection.fetch_object_from_header(message_guideline)
 
         agent_reply = message_agent_chain.invoke(
             {
@@ -53,13 +54,36 @@ class LlmRagSpamClassifier:
             """
         )
 
-    def __examine_geographical_data__(self):
+    def __examine_geographical_data__(self, geographical_data: str):
+        geography_guideline: str = "geography_guideline"
+
         geography_examiner_prompt = ChatPromptTemplate.from_template(
             """
+            TASK: Your sole task is to decide whether the given input is SPAM or HAM based on the Guidelines Provided.
+
+            RULES: 
+                1. Reply in this format: "DECISION: Explanation"
+                    - DECISION = TRUE if Geography is SUSPICIOUS/SPAM LIKELY
+                    - DECISIONS = FALSE if Geography is SAFE/HAM
+                    - Divulge into your explanation based on the guidelines.
+
             Guidelines: {guidelines}
             Human: {input}
             """
         )
+
+        geography_agent_chain = geography_examiner_prompt | self.LLM
+
+        guidelines = vector_collection.fetch_object_from_header(geography_guideline)
+
+        agent_reply = geography_agent_chain.invoke(
+            {
+                "guidelines": guidelines,
+                "input": geographical_data
+            }
+        )
+
+        return agent_reply.content
 
     def __classifier_agent__(self):
         classifier_agent_prompt = ChatPromptTemplate.from_template(
@@ -72,6 +96,7 @@ class LlmRagSpamClassifier:
 llm_rag_spam_classifier = LlmRagSpamClassifier()
 
 if __name__ == "__main__":
+    print("\n--- Message Content ---\n")
     messages = [
         # Spam
         "Congratulations! You've won a free iPhone. Click the link to claim now!",
@@ -86,3 +111,19 @@ if __name__ == "__main__":
 
     for message in messages:
         print(llm_rag_spam_classifier.__read_message_content__(message))
+
+    print("\n--- Geography Content ---\n")
+    sample_geography = [
+        ("Malaysia", "Kuala Lumpur"),
+        ("Singapore", "Central"),
+        ("Indonesia", "Bali"),
+        ("Thailand", "Chiang Mai"),
+        ("United States", "Virginia"),
+        ("China", "Beijing"),
+        ("Netherlands", "North Holland"),
+        ("Russia", "Moscow"),
+        ("United Kingdom", "Greater London"),
+    ]
+
+    for geo in sample_geography:
+        print(llm_rag_spam_classifier.__examine_geographical_data__(str(geo)))
