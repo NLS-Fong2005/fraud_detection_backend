@@ -69,7 +69,7 @@ class VectorCollection:
             documents = self.__fetch_all_objects__()
 
             for document in documents:
-                if header in document["Properties"]["Header"]:
+                if header in document["Properties"]["header"]:
                     context.append(document)
 
             print(f"📖 Retrieved {len(context)} documents from collection: {COLLECTION_NAME}")
@@ -77,6 +77,8 @@ class VectorCollection:
         except Exception as e:
             print(f"Something went wrong: {e}")
             return []
+
+vector_collection = VectorCollection()
 
 # Testing Purposes
 if __name__ == "__main__":

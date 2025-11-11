@@ -3,6 +3,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 
+from src.machine_learning.llm_rag_method.vector_store.vector_database import vector_collection
+
 load_dotenv()
 
 # <--- Configurations --->
@@ -19,9 +21,10 @@ class LlmRagSpamClassifier:
             TASK: Your sole task is to decide whether the given input is SPAM or HAM based on the Guidelines Provided.
 
             RULES: 
-                1. Only return TRUE or FALSE.
-                    - TRUE if SPAM
-                    - FALSE if HAM
+                1. Reply in this format: "DECISION: Explanation"
+                    - DECISION = TRUE if SPAM
+                    - DECISIONS = FALSE if HAM
+                    - Divulge into your explanation based on the guidelines.
 
             Guidelines: {guidelines}
             Human: {input}
@@ -30,7 +33,7 @@ class LlmRagSpamClassifier:
 
         message_agent_chain = message_agent_prompt | self.LLM
 
-        guidelines: str = "If the message contains the word SPAM, it's SPAM; else HAM."
+        guidelines = vector_collection.fetch_object_from_header("message_guideline")
 
         agent_reply = message_agent_chain.invoke(
             {
@@ -69,7 +72,17 @@ class LlmRagSpamClassifier:
 llm_rag_spam_classifier = LlmRagSpamClassifier()
 
 if __name__ == "__main__":
-    print(llm_rag_spam_classifier.__read_message_content__("This message is SPAM"))
-    print(llm_rag_spam_classifier.__read_message_content__("This message is HAM"))
-    print(llm_rag_spam_classifier.__read_message_content__("I am SPAM"))
-    print(llm_rag_spam_classifier.__read_message_content__("I am HAM"))
+    messages = [
+        # Spam
+        "Congratulations! You've won a free iPhone. Click the link to claim now!",
+        "URGENT: Your bank account has been suspended. Verify your details immediately.",
+        "You've been selected for a £5000 reward. Reply YES to receive it today!",
+
+        # Ham
+        "Hey, are we still meeting for lunch later?",
+        "Don't forget the team call at 3pm, yeah?",
+        "Could you send me the report when you're done?"
+    ]
+
+    for message in messages:
+        print(llm_rag_spam_classifier.__read_message_content__(message))
