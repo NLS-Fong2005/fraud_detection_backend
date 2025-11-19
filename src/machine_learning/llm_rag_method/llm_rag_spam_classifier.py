@@ -6,6 +6,7 @@ from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 
 from src.machine_learning.llm_rag_method.vector_store.vector_database import vector_collection
+from src.machine_learning.llm_rag_method.models.object_model import DataObject
 
 load_dotenv()
 
@@ -77,7 +78,7 @@ class LlmRagSpamClassifier:
 
         return agent_reply.content
     
-    def __examine_temporal_data__(self, hour_sent: int):
+    def __examine_temporal_data__(self, sent_time: str):
         @tool("is_suspicious_hour", description="Takes the hour input and returns a boolean. If TRUE, the hour at which message was sent is suspicious. If False, the hour at which message was sent is not likely to be spam.")
         def is_suspicious_hour(hour: str) -> bool:
             hour_int: int = int(hour)
@@ -86,6 +87,8 @@ class LlmRagSpamClassifier:
             else:
                 return False
         
+        hour_sent: str = sent_time.split(":")[0]
+
         temporal_data_examiner_prompt: str = """
             # TASK
             Your sole task is to decide whether the given temporal input is SPAM or HAM based on the output of the tool provided.
@@ -104,7 +107,7 @@ class LlmRagSpamClassifier:
         )
 
         agent_reply = agent.invoke(
-            {"messages": [{"role": "user", "content": str(hour_sent)}]}
+            {"messages": [{"role": "user", "content": hour_sent}]}
         )
 
         return agent_reply["messages"][-1].content
@@ -139,17 +142,56 @@ class LlmRagSpamClassifier:
 
         return agent_reply.content
 
-    def classifier_agent(self):
+    def classifier_agent(
+            self,
+            data_row: DataObject,
+    ):
+        @tool("percentage_of_spam", description="Takes the number of True Statements, and returns the final percentage of how likely the message is deemed to be SPAM.")
+        def percentage_of_spam(number_of_true_statements: str):
+            number_of_true_statements_int: int = int(number_of_true_statements)
+
+            return f"{(number_of_true_statements_int/4)*100:.0f}%"
+
         classifier_agent_prompt = ChatPromptTemplate.from_template(
             """
             # TASK
             Your sole task is to determine how likely a message is suspicious of being spam based on the number of true statements for four columns. 
-            Use the provided tool to help calculate.
-            Human: {input}
+
+            # RULES:
+                1. Always use the provided tool "percentage_of_spam"
+                2. Reply and expand upon how likely is the message spam with the given percentage.
             """
         )
+
+        agent = create_agent(
+            self.LLM,
+            tools=[percentage_of_spam],
+            system_prompt=str(classifier_agent_prompt)
+        )
+
+        content: str = f"""
+        message: {data_row.message_content}
+        
+        is_message_content_spam: {self.__read_message_content__(message_content=data_row.message_content)}
+        is_network_data_spam: {self.__examine_network_data__(network_data=data_row.source_ip)}
+        is_temporal_data_spam: {self.__examine_temporal_data__(sent_time=data_row.sent_time)}
+        is_geographical_data_spam: {self.__examine_geographical_data__(geographical_data=data_row.source_location)}
+        """
+
+        agent_reply = agent.invoke(
+            {"messages": [{"role": "user", "content": content}]}
+        )
+
+        return agent_reply["messages"][-1].content
 
 llm_rag_spam_classifier = LlmRagSpamClassifier()
 
 if __name__ == "__main__":
-    print(llm_rag_spam_classifier.__examine_temporal_data__(hour_sent=12))
+    data_row: DataObject = DataObject(
+        message_content="WINNER!! As a valued network customer you have been selected to receivea £900 prize reward! To claim call 09061701461. Claim code KL341. Valid 12 hours only.",
+        sent_time="04:34:39",
+        source_ip="198.51.100.161",
+        source_location="('Romania', 'Bucharest')"
+    )
+
+    print(llm_rag_spam_classifier.classifier_agent(data_row=data_row))
