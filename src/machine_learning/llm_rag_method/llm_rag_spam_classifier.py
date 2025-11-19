@@ -187,11 +187,4 @@ class LlmRagSpamClassifier:
 llm_rag_spam_classifier = LlmRagSpamClassifier()
 
 if __name__ == "__main__":
-    data_row: DataObject = DataObject(
-        message_content="WINNER!! As a valued network customer you have been selected to receivea £900 prize reward! To claim call 09061701461. Claim code KL341. Valid 12 hours only.",
-        sent_time="04:34:39",
-        source_ip="198.51.100.161",
-        source_location="('Romania', 'Bucharest')"
-    )
-
-    print(llm_rag_spam_classifier.classifier_agent(data_row=data_row))
+    pass

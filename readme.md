@@ -3,10 +3,10 @@ LLM_RAG Method
 **Frameworks**
 1. Langchain
 2. Python FastAPI
-3. ChromaDB
+3. WeaviateDB
 
 **Functions**
-1. RAG with ChromaDB
+1. RAG with WeaviateDB
    1. Loaded with Documents pertaining to Guidelines
    2. Model's judges row based on:
       1. Message Content

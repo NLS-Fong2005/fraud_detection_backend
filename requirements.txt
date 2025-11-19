@@ -1,3 +1,4 @@
+fastapi
 ipykernel
 langchain
 langchain_community
@@ -7,8 +8,9 @@ langchain-weaviate
 matplotlib
 numpy
 pandas
-python-dotenv
+paramiko
 python-docx
+python-dotenv
 scikit-learn
 seaborn
 torch
