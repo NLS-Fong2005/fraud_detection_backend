@@ -1,10 +1,12 @@
 # <--- Imports --->
-from langchain.agents import create_agent
+from concurrent.futures import ThreadPoolExecutor
+from langchain.agents import create_tool_calling_agent, AgentExecutor
 from langchain.tools import tool
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 
+# Assuming these exist in your project structure
 from src.machine_learning.llm_rag_method.vector_store.vector_database import vector_collection
 from src.machine_learning.llm_rag_method.models.object_model import DataObject
 
@@ -60,7 +62,7 @@ class LlmRagSpamClassifier:
                 1. Reply in this format: "TRUE/FALSE: Explanation"
                     - TRUE if given network is within SUSPICIOUS IP ADDRESS RANGES (SUSPICIOUS/SPAM LIKELY)
                     - FALSE if given network is SAFE/within SAFE IP ADDRESS RANGES (HAM)
-                    - Divulge into your explanation based on the guidelines.
+                    - Divulge into your explanation based on the explanation.
             
             Guidelines: {guidelines}
             Human: {input}
@@ -88,29 +90,37 @@ class LlmRagSpamClassifier:
                 return False
         
         hour_sent: str = sent_time.split(":")[0]
+        tools = [is_suspicious_hour]
 
-        temporal_data_examiner_prompt: str = """
-            # TASK
-            Your sole task is to decide whether the given temporal input is SPAM or HAM based on the output of the tool provided.
+        # UPDATED: Prompt must include agent_scratchpad for tools
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    """
+                    # TASK
+                    Your sole task is to decide whether the given temporal input is SPAM or HAM based on the output of the tool provided.
 
-            # RULES
-                1. Always use the the tool "is_suspicious_hour" to base your answer upon.
-                2. Reply in this format: "TRUE/FALSE: Explanation"
-                    - TRUE if hour is SPAM based on Tool Output
-                    - FALSE if hour is HAM based on Tool Output
-            """
-
-        agent = create_agent(
-            self.LLM,
-            tools=[is_suspicious_hour],
-            system_prompt=str(temporal_data_examiner_prompt)
+                    # RULES
+                        1. Always use the the tool "is_suspicious_hour" to base your answer upon.
+                        2. Reply in this format: "TRUE/FALSE: Explanation"
+                            - TRUE if hour is SPAM based on Tool Output
+                            - FALSE if hour is HAM based on Tool Output
+                    """,
+                ),
+                ("user", "{input}"),
+                ("placeholder", "{agent_scratchpad}"),
+            ]
         )
 
-        agent_reply = agent.invoke(
-            {"messages": [{"role": "user", "content": hour_sent}]}
-        )
+        # UPDATED: Create agent and executor
+        agent = create_tool_calling_agent(self.LLM, tools, prompt)
+        agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=False)
 
-        return agent_reply["messages"][-1].content
+        agent_reply = agent_executor.invoke({"input": hour_sent})
+
+        # AgentExecutor returns a dict with 'output' key
+        return agent_reply["output"]
 
     def __examine_geographical_data__(self, geographical_data: str):
         geography_guideline: str = "geography_guideline"
@@ -141,50 +151,77 @@ class LlmRagSpamClassifier:
         )
 
         return agent_reply.content
-
+    
     def classifier_agent(
-            self,
-            data_row: DataObject,
+                self,
+                data_row: DataObject,
     ):
+        # 1. Define the Tool
         @tool("percentage_of_spam", description="Takes the number of True Statements, and returns the final percentage of how likely the message is deemed to be SPAM.")
         def percentage_of_spam(number_of_true_statements: str):
-            number_of_true_statements_int: int = int(number_of_true_statements)
-
+            try:
+                number_of_true_statements_int: int = int(number_of_true_statements)
+            except ValueError:
+                return "Error: Input must be a number."
             return f"{(number_of_true_statements_int/4)*100:.0f}%"
 
-        classifier_agent_prompt = ChatPromptTemplate.from_template(
-            """
-            # TASK
-            Your sole task is to determine how likely a message is suspicious of being spam based on the number of true statements for four columns. 
+        tools = [percentage_of_spam]
 
-            # RULES:
-                1. Always use the provided tool "percentage_of_spam"
-                2. Reply and expand upon how likely is the message spam with the given percentage.
-            """
+        # 2. Define the Prompt
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    """
+                    # TASK
+                    Your sole task is to determine how likely a message is suspicious of being spam based on the number of true statements for four columns. 
+
+                    # RULES:
+                        1. Always use the provided tool "percentage_of_spam"
+                        2. Only return the percentage of spam.
+                    """,
+                ),
+                ("user", "{input}"),
+                ("placeholder", "{agent_scratchpad}"),
+            ]
         )
 
-        agent = create_agent(
-            self.LLM,
-            tools=[percentage_of_spam],
-            system_prompt=str(classifier_agent_prompt)
-        )
+        agent = create_tool_calling_agent(self.LLM, tools, prompt)
+        agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=False)
+
+        with ThreadPoolExecutor() as executor:
+            future_msg = executor.submit(self.__read_message_content__, data_row.message_content)
+            future_net = executor.submit(self.__examine_network_data__, data_row.source_ip)
+            future_time = executor.submit(self.__examine_temporal_data__, data_row.sent_time)
+            future_geo = executor.submit(self.__examine_geographical_data__, data_row.source_location)
+
+            msg_result = future_msg.result()
+            net_result = future_net.result()
+            time_result = future_time.result()
+            geo_result = future_geo.result()
 
         content: str = f"""
         message: {data_row.message_content}
         
-        is_message_content_spam: {self.__read_message_content__(message_content=data_row.message_content)}
-        is_network_data_spam: {self.__examine_network_data__(network_data=data_row.source_ip)}
-        is_temporal_data_spam: {self.__examine_temporal_data__(sent_time=data_row.sent_time)}
-        is_geographical_data_spam: {self.__examine_geographical_data__(geographical_data=data_row.source_location)}
+        is_message_content_spam: {msg_result}
+        is_network_data_spam: {net_result}
+        is_temporal_data_spam: {time_result}
+        is_geographical_data_spam: {geo_result}
         """
 
-        agent_reply = agent.invoke(
-            {"messages": [{"role": "user", "content": content}]}
-        )
+        # 5. Invoke the final aggregator agent
+        agent_reply = agent_executor.invoke({"input": content})
 
-        return agent_reply["messages"][-1].content
+        return agent_reply["output"]
 
 llm_rag_spam_classifier = LlmRagSpamClassifier()
 
 if __name__ == "__main__":
-    pass
+    row_object: DataObject = DataObject(
+        message_content="Free entry in 2 a wkly comp to win FA Cup final tkts 21st May 2005. Text FA to 87121 to receive entry question(std txt rate)T&C's apply 08452810075over18's",
+        sent_time="00:53:38",
+        source_ip="37.120.103.92",
+        source_location="('United States', 'Virginia')"
+    )
+
+    print(llm_rag_spam_classifier.classifier_agent(row_object))

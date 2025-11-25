@@ -10,6 +10,7 @@ from fastapi import (
 from fastapi.responses import StreamingResponse
 
 from src.machine_learning.llm_rag_method.models.object_model import DataObject
+from src.machine_learning.llm_rag_method.llm_rag_spam_classifier import llm_rag_spam_classifier
 
 app = FastAPI()
 
@@ -65,9 +66,7 @@ def process_csv(file_object):
                     source_location=row_dict["Source_Location"]
                 )
 
-                row_json = row_object.model_dump_json()
-
-                yield f"{row_json}\n"
+                yield f"{llm_rag_spam_classifier.classifier_agent(row_object)}\n"
     except Exception as e:
         error_detail = json.dumps({"error": f"Stream Interrupted: {e}"})
         yield f"{error_detail}\n"
