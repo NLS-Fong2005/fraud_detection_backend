@@ -1,4 +1,5 @@
 # <--- Imports --->
+import io
 import pandas as pd
 import json
 from fastapi import (
@@ -72,8 +73,11 @@ def process_csv(file_object):
         yield f"{error_detail}\n"
 
 @app.post("/upload/stream-csv")
-def upload_and_stream_csv(file: UploadFile = File(...)):
+async def upload_and_stream_csv(file: UploadFile = File(...)):
+    content_bytes = await file.read()
+
+    csv_buffer = io.StringIO(content_bytes.decode("utf-8"))
     return StreamingResponse(
-        process_csv(file.file), #type: ignore
+        process_csv(csv_buffer), #type: ignore
         media_type="application/x-ndjson"
     )
